@@ -34,6 +34,7 @@ ExternalProject_Add(mpv-release
         shaderc
         libplacebo
         spirv-cross
+        vapoursynth
     URL ${LINK}
     SOURCE_DIR ${SOURCE_LOCATION}
     CONFIGURE_COMMAND ${EXEC} CONF=1 meson setup <BINARY_DIR> <SOURCE_DIR>
@@ -61,6 +62,7 @@ ExternalProject_Add(mpv-release
         -Dopenal=disabled
         -Dspirv-cross=enabled
         -Dvulkan=enabled
+        -Dvapoursynth=enabled
         -Dlibplacebo=enabled
         -Degl-angle=enabled
     BUILD_COMMAND ${EXEC} LTO_JOB=1 ninja -C <BINARY_DIR>

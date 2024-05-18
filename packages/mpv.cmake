@@ -19,6 +19,7 @@ ExternalProject_Add(mpv
         shaderc
         libplacebo
         spirv-cross
+        vapoursynth
     GIT_REPOSITORY https://github.com/mpv-player/mpv.git
     SOURCE_DIR ${SOURCE_LOCATION}
     GIT_CLONE_FLAGS "--filter=tree:0"
@@ -47,6 +48,7 @@ ExternalProject_Add(mpv
         -Dopenal=disabled
         -Dspirv-cross=enabled
         -Dvulkan=enabled
+        -Dvapoursynth=enabled
         -Degl-angle=enabled
         -Dc_args='-Wno-error=int-conversion'
     BUILD_COMMAND ${EXEC} LTO_JOB=1 PDB=1 ninja -C <BINARY_DIR>

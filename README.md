@@ -276,7 +276,7 @@ This project was originally created and maintained [lachs0r](https://github.com/
     * x265
     * aom
     * xvidcore
-* vapoursynth
+* ~~vapoursynth~~
 * libjxl
 * libwebp
 * libsdl2

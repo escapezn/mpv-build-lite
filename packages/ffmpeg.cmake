@@ -28,7 +28,6 @@ ExternalProject_Add(ffmpeg
         libzvbi
         libaribcaption
         dav1d
-        vapoursynth
         rubberband
         libva
     GIT_REPOSITORY https://github.com/FFmpeg/FFmpeg.git
@@ -48,7 +47,6 @@ ExternalProject_Add(ffmpeg
         --enable-version3
         --enable-postproc
         --enable-avisynth
-        --enable-vapoursynth
         --enable-gmp
         --enable-libass
         --enable-libbluray

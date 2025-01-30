@@ -3,6 +3,7 @@ ExternalProject_Add(svtav1
     SOURCE_DIR ${SOURCE_LOCATION}
     GIT_CLONE_FLAGS "--filter=tree:0"
     UPDATE_COMMAND ""
+    GIT_RESET 41c884a69f96a2bef10c668d9790b5969e82735a
     CONFIGURE_COMMAND ${EXEC} CONF=1 cmake -H<SOURCE_DIR> -B<BINARY_DIR>
         -G Ninja
         -DCMAKE_BUILD_TYPE=Release
@@ -15,6 +16,7 @@ ExternalProject_Add(svtav1
         -DBUILD_ENC=ON
         -DSVT_AV1_LTO=OFF
         -DBUILD_APPS=OFF
+        -DCMAKE_C_FLAGS='${CMAKE_C_FLAGS} -Dav1_cospi_arr_s32_data=svtav1_av1_cospi_arr_s32_data'
     BUILD_COMMAND ${EXEC} ninja -C <BINARY_DIR>
     INSTALL_COMMAND ${EXEC} ninja -C <BINARY_DIR> install
     LOG_DOWNLOAD 1 LOG_UPDATE 1 LOG_CONFIGURE 1 LOG_BUILD 1 LOG_INSTALL 1

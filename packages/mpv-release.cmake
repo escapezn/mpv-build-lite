@@ -34,6 +34,7 @@ ExternalProject_Add(mpv-release
         shaderc
         libplacebo
         spirv-cross
+        vapoursynth
     URL ${LINK}
     SOURCE_DIR ${SOURCE_LOCATION}
     CONFIGURE_COMMAND ${EXEC} CONF=1 meson setup <BINARY_DIR> <SOURCE_DIR>
@@ -51,7 +52,6 @@ ExternalProject_Add(mpv-release
         -Dpdf-build=enabled
         -Dlua=enabled
         -Djavascript=enabled
-        -Dsdl2-gamepad=enabled
         -Dlibarchive=enabled
         -Dlibbluray=enabled
         -Ddvdnav=enabled
@@ -61,6 +61,7 @@ ExternalProject_Add(mpv-release
         -Dopenal=disabled
         -Dspirv-cross=enabled
         -Dvulkan=enabled
+        -Dvapoursynth=enabled
         ${mpv_gl}
         -Dc_args='-Wno-error=int-conversion'
     BUILD_COMMAND ${EXEC} LTO_JOB=1 ninja -C <BINARY_DIR>

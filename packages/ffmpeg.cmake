@@ -5,7 +5,6 @@ ExternalProject_Add(ffmpeg
         ${nvcodec_headers}
         bzip2
         gmp
-        lame
         libass
         libbluray
         libdvdnav
@@ -45,7 +44,6 @@ ExternalProject_Add(ffmpeg
         --enable-runtime-cpudetect
         --enable-gpl
         --enable-version3
-        --enable-postproc
         --enable-avisynth
         --enable-gmp
         --enable-libass
@@ -56,7 +54,6 @@ ExternalProject_Add(ffmpeg
         --enable-libfribidi
         --enable-libfontconfig
         --enable-libharfbuzz
-        --enable-libmp3lame
         --enable-libopus
         --enable-libsoxr
         --enable-libspeex

@@ -35,7 +35,6 @@ ExternalProject_Add(mpv-release
         libplacebo
         spirv-cross
         vapoursynth
-        libsdl2
         subrandr
     URL ${LINK}
     SOURCE_DIR ${SOURCE_LOCATION}

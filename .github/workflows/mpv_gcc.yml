@@ -97,33 +97,39 @@ jobs:
           ninja -C build_$BIT update
           [ "$MPV_TARBALL" = "true" ] && ninja -C build_$BIT mpv-release || ninja -C build_$BIT mpv
           mpv_ver=""
-          if [ "$MPV_TARBALL" = "true" ]; then
-            for vfile in "build_$BIT/packages/mpv-release-prefix/MPV_VERSION" "build_$BIT/packages/mpv-release-prefix/VERSION"; do
-              if [ -f "$vfile" ]; then
-                mpv_ver=$(head -n 1 "$vfile" | tr -d '\r\n')
-                [ -n "$mpv_ver" ] && break
-              fi
-            done
-          else
+          for vfile in "build_$BIT/packages/mpv-release-prefix/MPV_VERSION" "build_$BIT/packages/mpv-release-prefix/VERSION" "src_packages/mpv-release/MPV_VERSION" "src_packages/mpv-release/VERSION"; do
+            if [ -f "$vfile" ]; then
+              mpv_ver=$(head -n 1 "$vfile" | tr -d '\r\n ')
+              [ -n "$mpv_ver" ] && break
+            fi
+          done
+          if [ -z "$mpv_ver" ]; then
             for vfile in "build_$BIT/install/mingw/mpv-version.h" "build_$BIT/$BIT-w64-mingw32/mpv-version.h"; do
               if [ -f "$vfile" ]; then
-                mpv_ver=$(grep -oP '#define (MPV_)?VERSION "\K[^"]+' "$vfile" 2>/dev/null | head -n 1 || true)
+                mpv_ver=$(grep -oP '#define (MPV_)?VERSION "\K[^"]+' "$vfile" 2>/dev/null | head -n 1 | tr -d '\r\n ' || true)
                 [ -n "$mpv_ver" ] && break
               fi
             done
-            if [ -z "$mpv_ver" ] && [ -d "src_packages/mpv" ]; then
-              mpv_ver=$(git -C src_packages/mpv describe --tags --always 2>/dev/null || git -C src_packages/mpv rev-parse --short HEAD 2>/dev/null || true)
-            fi
+          fi
+          if [ -z "$mpv_ver" ]; then
+            for sdir in "src_packages/mpv" "src_packages/mpv-release"; do
+              if [ -d "$sdir" ]; then
+                mpv_ver=$(git -C "$sdir" describe --tags --always 2>/dev/null | tr -d '\r\n ' || true)
+                [ -n "$mpv_ver" ] && break
+                mpv_ver=$(git -C "$sdir" rev-parse --short HEAD 2>/dev/null | tr -d '\r\n ' || true)
+                [ -n "$mpv_ver" ] && break
+              fi
+            done
           fi
           echo "mpv_ver=$mpv_ver" >> $GITHUB_OUTPUT
-          echo "$mpv_ver" > "build_$BIT/mpv_version.txt"
+          [ -n "$mpv_ver" ] && echo "$mpv_ver" > "build_$BIT/mpv_version.txt" || true
 
       - name: Packaging mpv
         run: |
           mkdir -p release_$BIT
           7z a -m0=lzma2 -mx=9 -ms=on release$BIT/mpv-debug-${{ env.arch }}${{ env.x86_64_level }}.7z build_$BIT/mpv-debug*
           rm -rf build_$BIT/mpv-debug*; ninja -C build_$BIT mpv-packaging; mv build_$BIT/mpv*.7z release_$BIT
-          [ -f "build_$BIT/mpv_version.txt" ] && cp "build_$BIT/mpv_version.txt" release_$BIT/mpv_version.txt || true
+          [ -s "build_$BIT/mpv_version.txt" ] && cp "build_$BIT/mpv_version.txt" release_$BIT/mpv_version.txt || true
 
       - name: Copying ffmpeg
         run: |
@@ -239,15 +245,24 @@ jobs:
           mpv_ver=""
           if [ -n "$OUTPUTS_MPV_VER" ]; then
             mpv_ver="$OUTPUTS_MPV_VER"
-          elif [ -f release/mpv_version.txt ]; then
-            mpv_ver=$(head -n 1 release/mpv_version.txt | tr -d '\r\n')
+          elif [ -s release/mpv_version.txt ]; then
+            mpv_ver=$(head -n 1 release/mpv_version.txt | tr -d '\r\n ')
           fi
           rm -f release/mpv_version.txt
 
           if [ -z "$mpv_ver" ]; then
             first_mpv=$(ls release/mpv*.7z 2>/dev/null | head -n 1)
-            if [ -n "$first_mpv" ] && [[ "$first_mpv" =~ git-([0-9a-fA-F]+) ]]; then
-              mpv_ver="git-${BASH_REMATCH[1]}"
+            if [ -n "$first_mpv" ]; then
+              if [[ "$first_mpv" =~ mpv-([vV]?[0-9]+\.[0-9]+[^/]*) ]]; then
+                candidate="${BASH_REMATCH[1]}"
+                candidate="${candidate%%-x86*}"
+                candidate="${candidate%%-i686*}"
+                candidate="${candidate%%-aarch64*}"
+                candidate="${candidate%%.7z}"
+                mpv_ver="$candidate"
+              elif [[ "$first_mpv" =~ git-([0-9a-fA-F]+) ]]; then
+                mpv_ver="git-${BASH_REMATCH[1]}"
+              fi
             fi
           fi
 

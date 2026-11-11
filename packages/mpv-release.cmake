@@ -35,7 +35,6 @@ ExternalProject_Add(mpv-release
         libplacebo
         spirv-cross
         vapoursynth
-        subrandr
     URL ${LINK}
     SOURCE_DIR ${SOURCE_LOCATION}
     CONFIGURE_COMMAND ${EXEC} CONF=1 meson setup <BINARY_DIR> <SOURCE_DIR>
@@ -89,10 +88,11 @@ ExternalProject_Add_Step(mpv-release copy-binary
     COMMAND ${CMAKE_COMMAND} -E copy <BINARY_DIR>/mpv.exe                           ${CMAKE_CURRENT_BINARY_DIR}/mpv-package/mpv.exe
     COMMAND ${CMAKE_COMMAND} -E copy <BINARY_DIR>/mpv.com                           ${CMAKE_CURRENT_BINARY_DIR}/mpv-package/mpv.com
     COMMAND ${CMAKE_COMMAND} -E copy <BINARY_DIR>/mpv.pdf                           ${CMAKE_CURRENT_BINARY_DIR}/mpv-package/doc/manual.pdf
+    COMMAND ${CMAKE_COMMAND} -E copy <BINARY_DIR>/common/version.h                  ${MINGW_INSTALL_PREFIX}/mpv-version.h
     COMMENT "Copying mpv binaries and manual"
 )
 
-set(RENAME ${CMAKE_CURRENT_BINARY_DIR}/mpv-prefix/src/rename-stable.sh)
+set(RENAME ${PREFIX_DIR}/src/rename-stable.sh)
 file(WRITE ${RENAME}
 "#!/bin/bash
 cd $1

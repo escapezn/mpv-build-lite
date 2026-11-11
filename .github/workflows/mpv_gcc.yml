@@ -95,14 +95,35 @@ jobs:
           MPV_TARBALL: ${{ github.event.inputs.mpv_tarball }}
         run: |
           ninja -C build_$BIT update
-          $MPV_TARBALL && ninja -C build_$BIT mpv-release || ninja -C build_$BIT mpv
-          $MPV_TARBALL && echo "mpv_ver=$(cat build_$BIT/packages/mpv-release-prefix/VERSION)" >> $GITHUB_OUTPUT || echo "mpv_ver=$(cat build_$BIT/install/mingw/mpv-version.h | grep -oP '#define VERSION "(\K[^"]+)')" >> $GITHUB_OUTPUT
+          [ "$MPV_TARBALL" = "true" ] && ninja -C build_$BIT mpv-release || ninja -C build_$BIT mpv
+          mpv_ver=""
+          if [ "$MPV_TARBALL" = "true" ]; then
+            for vfile in "build_$BIT/packages/mpv-release-prefix/MPV_VERSION" "build_$BIT/packages/mpv-release-prefix/VERSION"; do
+              if [ -f "$vfile" ]; then
+                mpv_ver=$(head -n 1 "$vfile" | tr -d '\r\n')
+                [ -n "$mpv_ver" ] && break
+              fi
+            done
+          else
+            for vfile in "build_$BIT/install/mingw/mpv-version.h" "build_$BIT/$BIT-w64-mingw32/mpv-version.h"; do
+              if [ -f "$vfile" ]; then
+                mpv_ver=$(grep -oP '#define (MPV_)?VERSION "\K[^"]+' "$vfile" 2>/dev/null | head -n 1 || true)
+                [ -n "$mpv_ver" ] && break
+              fi
+            done
+            if [ -z "$mpv_ver" ] && [ -d "src_packages/mpv" ]; then
+              mpv_ver=$(git -C src_packages/mpv describe --tags --always 2>/dev/null || git -C src_packages/mpv rev-parse --short HEAD 2>/dev/null || true)
+            fi
+          fi
+          echo "mpv_ver=$mpv_ver" >> $GITHUB_OUTPUT
+          echo "$mpv_ver" > "build_$BIT/mpv_version.txt"
 
       - name: Packaging mpv
         run: |
           mkdir -p release_$BIT
           7z a -m0=lzma2 -mx=9 -ms=on release$BIT/mpv-debug-${{ env.arch }}${{ env.x86_64_level }}.7z build_$BIT/mpv-debug*
           rm -rf build_$BIT/mpv-debug*; ninja -C build_$BIT mpv-packaging; mv build_$BIT/mpv*.7z release_$BIT
+          [ -f "build_$BIT/mpv_version.txt" ] && cp "build_$BIT/mpv_version.txt" release_$BIT/mpv_version.txt || true
 
       - name: Copying ffmpeg
         run: |
@@ -204,13 +225,43 @@ jobs:
           key: ${{ env.release_x86_64_key }}
 
       - name: Moving archives
+        env:
+          OUTPUTS_MPV_VER: ${{ needs.build_mpv.outputs.mpv_ver }}
         run: |
           mkdir -p release
           mv release_x86_64/* release
-          rm release/ffmpeg*.7z
+          rm -f release/ffmpeg*.7z
           file-rename 's/mpv-(.*)x86_64-(.+)/mpv-${1}x86_64-gcc-${2}/s' $PWD/release/mpv*.7z
           du -ah release/*
-          echo "short_date=$(date "+%Y%m%d")" >> $GITHUB_ENV
+          short_date=$(date "+%Y%m%d")
+          echo "short_date=$short_date" >> $GITHUB_ENV
+
+          mpv_ver=""
+          if [ -n "$OUTPUTS_MPV_VER" ]; then
+            mpv_ver="$OUTPUTS_MPV_VER"
+          elif [ -f release/mpv_version.txt ]; then
+            mpv_ver=$(head -n 1 release/mpv_version.txt | tr -d '\r\n')
+          fi
+          rm -f release/mpv_version.txt
+
+          if [ -z "$mpv_ver" ]; then
+            first_mpv=$(ls release/mpv*.7z 2>/dev/null | head -n 1)
+            if [ -n "$first_mpv" ] && [[ "$first_mpv" =~ git-([0-9a-fA-F]+) ]]; then
+              mpv_ver="git-${BASH_REMATCH[1]}"
+            fi
+          fi
+
+          mpv_ver="${mpv_ver#-}"
+          if [ -n "$mpv_ver" ]; then
+            tag_name="${mpv_ver}-${short_date}"
+          else
+            tag_name="build-${short_date}"
+          fi
+          tag_name="${tag_name#-}"
+          [ -z "$tag_name" ] && tag_name="build-${short_date}"
+
+          echo "TAG_NAME=$tag_name" >> $GITHUB_ENV
+          echo "Resolved release tag: $tag_name"
 
       - name: Release
         uses: softprops/action-gh-release@v1
@@ -218,6 +269,6 @@ jobs:
         continue-on-error: true
         with:
           prerelease: true
-          tag_name: ${{ needs.build_mpv.outputs.mpv_ver }}-${{ env.short_date }}
+          tag_name: ${{ env.TAG_NAME }}
           fail_on_unmatched_files: true
           files: release/*

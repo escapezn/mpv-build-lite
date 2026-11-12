@@ -163,14 +163,16 @@ jobs:
         uses: actions/upload-artifact@master
         with:
           name: release_${{ matrix.bit }}
-          path: release${{ matrix.bit }}/*.7z
+          path: release_${{ matrix.bit }}/*.7z
           retention-days: 30
+          if-no-files-found: ignore
 
       - name: Uploading ${{ matrix.bit }} build
         uses: actions/upload-artifact@master
         with:
           name: mpv-${{ matrix.bit }}
-          path: release_${{ matrix.bit }}/mpv-${{ env.arch }}*
+          path: release_${{ matrix.bit }}/mpv*.7z
+          if-no-files-found: ignore
 
       - name: Cleaning build directory
         if: always()
@@ -279,7 +281,7 @@ jobs:
           echo "Resolved release tag: $tag_name"
 
       - name: Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         if: ${{ github.event.inputs.github_release == 'true' }}
         continue-on-error: true
         with:
